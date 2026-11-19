@@ -88,7 +88,7 @@ The FAQ CSV contains 30 entries. The historical ticket CSV contains 50 synthetic
 - **Ticket history:** Search tickets, filter by status, update status or assignee, and export the filtered results as CSV.
 - **Admin dashboard:** View ticket totals, status, reply, reopened, unresolved, and resolution-time metrics plus charts. The dashboard works without an API key.
 
-With a valid API key, Gemini is always tried first. Temporary HTTP 429 rate limits are retried with exponential backoff within the 45-second request budget. If Gemini still times out or returns HTTP 504, the app uses a matching FAQ answer when available; if no FAQ matches, it saves an Open ticket. Missing or rejected keys, unavailable models, and other non-timeout failures do not use FAQ content: the app shows the reason and saves an Open ticket instead. Fallback tickets are labeled, and their sentiment and priority are marked "Not analyzed."
+With a valid API key, Gemini is always tried first. Temporary HTTP 429 rate limits are retried with exponential backoff within the 60-second request budget. If Gemini still times out or returns HTTP 504, the app uses a matching FAQ answer when available; if no FAQ matches, it saves an Open ticket. Missing or rejected keys, unavailable models, and other non-timeout failures do not use FAQ content: the app shows the reason and saves an Open ticket instead. Fallback tickets are labeled, and their sentiment and priority are marked "Not analyzed."
 
 ## Demo walkthrough
 

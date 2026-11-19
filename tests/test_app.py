@@ -185,7 +185,7 @@ class SmartSupportAppTests(unittest.TestCase):
         self.assertEqual(len(messages), 2)
         self.assertEqual(messages[1]["response_source"], "FAQ fallback")
         self.assertEqual(messages[1]["analysis"]["category"], "Account")
-        self.assertIn("within 45 seconds", messages[1]["content"])
+        self.assertIn("within 60 seconds", messages[1]["content"])
         self.assertEqual(messages[1]["analysis"]["status"], "Open")
 
     def test_new_chat_clears_pending_message_and_starts_new_conversation(
@@ -286,7 +286,7 @@ app.render_chat(
         self.assertEqual(messages[1]["content"], analysis["answer"])
         self.assertEqual(messages[1]["response_source"], "Gemini")
 
-    def test_persistent_429_retries_until_the_45_second_budget(self) -> None:
+    def test_persistent_429_retries_until_the_60_second_budget(self) -> None:
         elapsed = [0.0]
         rate_limit = APIError(
             429, {"error": {"message": "rate limited"}}

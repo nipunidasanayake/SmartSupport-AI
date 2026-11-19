@@ -44,7 +44,8 @@ SENTIMENTS = ("Positive", "Neutral", "Negative")
 PRIORITIES = ("Low", "Medium", "High")
 STATUSES = ("Open", "Pending", "Resolved", "Escalated")
 DEFAULT_MODEL = "gemini-4-hydrogen"
-GEMINI_REQUEST_TIMEOUT_MS = 45_000
+GEMINI_REQUEST_TIMEOUT_MS = 60_000
+GEMINI_REQUEST_TIMEOUT_SECONDS = GEMINI_REQUEST_TIMEOUT_MS // 1000
 FAQ_MATCH_STOPWORDS = frozenset(
     {
         "about",
@@ -631,7 +632,8 @@ def analyze_inquiry_with_retry(
         remaining_ms = int((deadline - time.monotonic()) * 1000)
         if remaining_ms <= 0:
             raise TimeoutException(
-                "Gemini remained rate-limited for 45 seconds"
+                "Gemini remained rate-limited for "
+                f"{GEMINI_REQUEST_TIMEOUT_SECONDS} seconds"
             )
         try:
             with genai.Client(
@@ -645,13 +647,15 @@ def analyze_inquiry_with_retry(
             remaining_ms = int((deadline - time.monotonic()) * 1000)
             if remaining_ms <= 0:
                 raise TimeoutException(
-                    "Gemini remained rate-limited for 45 seconds"
+                    "Gemini remained rate-limited for "
+                    f"{GEMINI_REQUEST_TIMEOUT_SECONDS} seconds"
                 ) from error
             delay_ms = min(retry_delay_ms, remaining_ms)
             time.sleep(delay_ms / 1000)
             if delay_ms >= remaining_ms:
                 raise TimeoutException(
-                    "Gemini remained rate-limited for 45 seconds"
+                    "Gemini remained rate-limited for "
+                    f"{GEMINI_REQUEST_TIMEOUT_SECONDS} seconds"
                 ) from error
             retry_delay_ms = min(retry_delay_ms * 2, 8_000)
 
@@ -768,8 +772,11 @@ def render_chat(
                 )
         except TimeoutException as error:
             reason = str(error)
-            if "45 seconds" not in reason:
-                reason = "Gemini did not respond within 45 seconds"
+            if f"{GEMINI_REQUEST_TIMEOUT_SECONDS} seconds" not in reason:
+                reason = (
+                    "Gemini did not respond within "
+                    f"{GEMINI_REQUEST_TIMEOUT_SECONDS} seconds"
+                )
             append_timeout_fallback(
                 pending_message,
                 faqs,

@@ -7,7 +7,7 @@ SmartSupport AI is a local Streamlit customer-support demo for the fictional Sho
 ## Roadmap delivery
 
 - **Project setup and datasets:** Python environment, dependencies, FAQ dataset, historical ticket dataset, and API-key configuration are documented.
-- **Gemini integration:** The tested default model is `gemini-4-hydrogen`. With a valid key, Gemini is tried first for each question. HTTP 429 rate limits are retried within the 45-second request budget. Only timeouts use a matching FAQ; other API failures or a missing key produce a clear service response and an Open ticket.
+- **Gemini integration:** The tested default model is `gemini-4-hydrogen`. With a valid key, Gemini is tried first for each question. HTTP 429 rate limits are retried within the 60-second request budget. Only timeouts use a matching FAQ; other API failures or a missing key produce a clear service response and an Open ticket.
 - **Ticket analysis:** Gemini supplies category, sentiment, priority, summary, and escalation recommendation. Timeout FAQ responses and service-fallback tickets are labeled, with sentiment and priority marked “Not analyzed.”
 - **Database:** SQLite stores tickets, response source, feedback, assignee, channel, status, reopen count, resolution time, and conversation ID. Existing databases are migrated without deleting their tickets.
 - **Interface:** Chat, ticket history, and analytics share a polished color system, responsive spacing, card-based metrics, and clearer page hierarchy.
