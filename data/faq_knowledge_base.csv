@@ -1,0 +1,31 @@
+faq_id,category,question,answer
+FAQ001,Refund,What is the refund policy?,Customers can request refunds within 7 days of purchase.
+FAQ002,Shipping,How long does delivery take?,Standard delivery takes 3-5 business days.
+FAQ003,Payment,What payment methods are accepted?,We accept Visa Mastercard and online banking.
+FAQ004,Account,How can I reset my password?,Click Forgot Password on the login page.
+FAQ005,Order,Can I track my order?,Use your tracking number to track your order.
+FAQ006,Order,Can I cancel my order?,Orders can be cancelled before shipment.
+FAQ007,Returns,How can I return a product?,Submit a return request through your customer account.
+FAQ008,Technical,The website is not loading.,Clear your browser cache and try again.
+FAQ009,Payment,My payment failed.,Verify your payment details and contact support if money was deducted.
+FAQ010,Shipping,My delivery is delayed.,Contact support with your order ID for investigation.
+FAQ011,Account,My account is locked.,Contact customer support for account verification.
+FAQ012,Subscription,How do I cancel my subscription?,Go to Account Settings and select Manage Subscription.
+FAQ013,Product,Where can I find product specifications?,Product specifications are listed on each product detail page.
+FAQ014,Returns,How long do refunds take?,Approved refunds are returned to the original payment method within 5-10 business days.
+FAQ015,Shipping,Do you offer express delivery?,Express delivery is available for eligible addresses at checkout.
+FAQ016,Order,Can I change my shipping address?,Contact support as soon as possible before the order ships.
+FAQ017,Payment,Can I use more than one payment method?,Only one payment method can be used per order.
+FAQ018,Account,How do I update my email address?,Sign in and update your email under Account Settings.
+FAQ019,Product,Are product images accurate?,Images are representative; check the product description for exact details.
+FAQ020,Returns,Can I return an opened item?,Return eligibility depends on the item and its condition; submit a request in your account.
+FAQ021,Shipping,Do you ship internationally?,Available shipping destinations are shown during checkout.
+FAQ022,Order,Where can I find my order number?,Your order number is in the confirmation email and your account order history.
+FAQ023,Payment,Why was I charged twice?,Pending authorizations may appear temporarily; contact support if both charges post.
+FAQ024,Account,How do I create an account?,Select Sign Up and follow the instructions on the ShopEase website.
+FAQ025,Product,How can I check product availability?,The product page displays current availability for your selected option.
+FAQ026,Technical,Checkout is not working.,Refresh the page and try another browser; contact support if the issue continues.
+FAQ027,Subscription,Where do I see my subscription details?,Open Account Settings and select Manage Subscription.
+FAQ028,Returns,Do I need the original packaging for a return?,Return instructions and packaging requirements are provided after your request is approved.
+FAQ029,Shipping,What should I do if tracking has not updated?,Allow up to 24 hours for tracking updates. Then contact support with your order ID.
+FAQ030,Payment,Can I get an invoice for my order?,Your receipt is available in the order confirmation email and account order history.

@@ -1,0 +1,51 @@
+ticket_id,customer_message,category,sentiment,priority,summary,ai_response,status,created_at
+T001,Where is my order?,Shipping,Neutral,Medium,Customer asks for an order update,Please use your tracking number to track your order.,Resolved,2026-11-10
+T002,My payment was deducted twice,Payment,Negative,High,Possible duplicate payment,Please contact support if both charges have posted so the payment can be investigated.,Open,2026-11-10
+T003,How can I reset my password?,Account,Neutral,Low,Customer needs password reset help,Click Forgot Password on the login page.,Resolved,2026-11-10
+T004,I received a damaged product,Returns,Negative,High,Product arrived damaged,Submit a return request through your customer account.,Escalated,2026-11-11
+T005,Thank you for your excellent service,General,Positive,Low,Customer praised the service,Thank you for your feedback. We are glad we could help.,Resolved,2026-11-11
+T006,My delivery is late,Shipping,Negative,Medium,Delivery is delayed,Contact support with your order ID so the delivery can be investigated.,Open,2026-11-11
+T007,I cannot sign in to my account,Account,Negative,Medium,Customer cannot access account,Try resetting your password using Forgot Password on the login page.,Resolved,2026-11-11
+T008,Can I cancel an order that has not shipped?,Order,Neutral,Low,Customer requests order cancellation,Orders can be cancelled before shipment. Contact support as soon as possible.,Resolved,2026-11-12
+T009,My card was charged but checkout failed,Payment,Negative,High,Payment taken with failed checkout,Verify your payment details and contact support if money was deducted.,Escalated,2026-11-12
+T010,How long does shipping take?,Shipping,Neutral,Low,Customer asks delivery estimate,Standard delivery takes 3-5 business days.,Resolved,2026-11-12
+T011,I need to return a jacket,Returns,Neutral,Low,Customer asks how to return an item,Submit a return request through your customer account.,Resolved,2026-11-12
+T012,The website keeps crashing,Technical,Negative,Medium,Website is unstable,Clear your browser cache and try again. Contact support if it continues.,Open,2026-11-12
+T013,Where do I find my invoice?,Payment,Neutral,Low,Customer requests invoice,Your receipt is available in the order confirmation email and account order history.,Resolved,2026-11-13
+T014,My account has been locked,Account,Negative,High,Customer account locked,Contact customer support for account verification.,Escalated,2026-11-13
+T015,Can I update my delivery address?,Order,Neutral,Medium,Customer wants to change delivery address,Contact support as soon as possible before the order ships.,Open,2026-11-13
+T016,This product is out of stock,Product,Negative,Low,Product unavailable,The product page displays current availability for your selected option.,Resolved,2026-11-13
+T017,How do I stop my subscription?,Subscription,Neutral,Low,Customer asks to cancel subscription,Go to Account Settings and select Manage Subscription.,Resolved,2026-11-13
+T018,My refund has not arrived,Refund,Negative,Medium,Refund not received,Approved refunds are returned to the original payment method within 5-10 business days.,Open,2026-11-14
+T019,Tracking has not changed in two days,Shipping,Negative,Medium,Tracking information is stale,Contact support with your order ID if tracking has not updated after 24 hours.,Open,2026-11-14
+T020,Can I pay with Visa?,Payment,Neutral,Low,Customer asks accepted payment methods,We accept Visa Mastercard and online banking.,Resolved,2026-11-14
+T021,My package arrived safely thank you,Shipping,Positive,Low,Customer confirms successful delivery,Thank you for letting us know. We are happy your order arrived safely.,Resolved,2026-11-14
+T022,How do I change my email?,Account,Neutral,Low,Customer wants to update email,Sign in and update your email under Account Settings.,Resolved,2026-11-14
+T023,The item I received is the wrong size,Returns,Negative,Medium,Customer received incorrect size,Submit a return request through your customer account.,Open,2026-11-14
+T024,Why is my order still processing?,Order,Neutral,Medium,Order processing status unclear,Contact support with your order ID if you need help checking its status.,Open,2026-11-14
+T025,Checkout will not accept my address,Technical,Negative,Medium,Checkout address validation problem,Refresh the page and try another browser; contact support if the issue continues.,Open,2026-11-14
+T026,Do you deliver internationally?,Shipping,Neutral,Low,Customer asks about international delivery,Available shipping destinations are shown during checkout.,Resolved,2026-11-14
+T027,I was charged but never received a confirmation email,Payment,Negative,High,Payment taken without order confirmation,Check your spam folder and contact support with your transaction reference for investigation.,Escalated,2026-11-14
+T028,Can I return an opened item?,Returns,Neutral,Low,Customer asks about opened-item return,Return eligibility depends on the item and its condition; submit a request in your account.,Resolved,2026-11-14
+T029,My password reset email never arrived,Account,Negative,Medium,Password reset email missing,Check your spam folder and make sure you entered the email linked to your account.,Open,2026-11-14
+T030,The product specifications are unclear,Product,Neutral,Low,Customer needs product details,Product specifications are listed on each product detail page.,Resolved,2026-11-14
+T031,Please help my order is urgent,Order,Negative,High,Customer requests urgent order assistance,Contact support with your order ID so the team can review the urgent request.,Escalated,2026-11-14
+T032,Can I use two cards for one order?,Payment,Neutral,Low,Customer asks about split payments,Only one payment method can be used per order.,Resolved,2026-11-14
+T033,The site is not loading on my phone,Technical,Negative,Medium,Website unavailable on mobile,Clear your browser cache and try again. You can also try another browser.,Open,2026-11-14
+T034,Where is my order number?,Order,Neutral,Low,Customer cannot find order number,Your order number is in the confirmation email and your account order history.,Resolved,2026-11-14
+T035,I want to cancel before shipment,Order,Neutral,Medium,Customer requests cancellation before shipment,Orders can be cancelled before shipment. Contact support as soon as possible.,Open,2026-11-14
+T036,My refund was rejected and I disagree,Refund,Negative,High,Customer disputes refund decision,Contact support with your order details so the team can review the refund decision.,Escalated,2026-11-14
+T037,Great prices and quick delivery,General,Positive,Low,Customer gives positive feedback,Thank you for your feedback. We are glad you enjoyed your ShopEase experience.,Resolved,2026-11-14
+T038,How can I see my subscription details?,Subscription,Neutral,Low,Customer asks where to view subscription,Open Account Settings and select Manage Subscription.,Resolved,2026-11-14
+T039,My package was delivered to the wrong place,Shipping,Negative,High,Package delivered to wrong location,Contact support with your order ID so the delivery can be investigated.,Escalated,2026-11-14
+T040,Can I get express shipping?,Shipping,Neutral,Low,Customer asks about express shipping,Express delivery is available for eligible addresses at checkout.,Resolved,2026-11-14
+T041,My account may have been accessed by someone else,Account,Negative,High,Possible account security issue,Contact customer support immediately for account verification and security assistance.,Escalated,2026-11-14
+T042,The item page shows the wrong color,Product,Negative,Medium,Product color information concern,Product images are representative; check the product description for exact details.,Open,2026-11-14
+T043,My payment keeps failing,Payment,Negative,Medium,Payment attempts are unsuccessful,Verify your payment details and contact support if money was deducted.,Open,2026-11-14
+T044,I need help checking a return,Returns,Neutral,Low,Customer needs return request help,You can review and submit a return request through your customer account.,Resolved,2026-11-14
+T045,I cannot get past the checkout page,Technical,Negative,Medium,Customer blocked at checkout,Refresh the page and try another browser; contact support if the issue continues.,Open,2026-11-14
+T046,Can you change the address on my shipped order?,Order,Neutral,Medium,Address change requested after shipment,Contact support with your order ID to ask whether a delivery change is possible.,Open,2026-11-14
+T047,Where can I see my receipt?,Payment,Neutral,Low,Customer requests payment receipt,Your receipt is available in the order confirmation email and account order history.,Resolved,2026-11-14
+T048,The delivery arrived later than expected,Shipping,Negative,Medium,Customer reports late delivery,Contact support with your order ID for investigation.,Open,2026-11-14
+T049,Thank you for sorting out my account,Account,Positive,Low,Customer thanks account support,You are welcome. Thank you for shopping with ShopEase.,Resolved,2026-11-14
+T050,The cancellation option is missing,Order,Negative,High,Customer cannot cancel order,Orders can be cancelled before shipment. Contact support immediately with your order ID.,Escalated,2026-11-14
