@@ -6,6 +6,7 @@ import json
 import os
 import re
 import sqlite3
+import time
 import uuid
 from contextlib import closing
 from pathlib import Path
@@ -619,6 +620,42 @@ possibly duplicated charge, a security concern, or an unresolved urgent issue.
     return result
 
 
+def analyze_inquiry_with_retry(
+    api_key: str, model: str, message: str, faqs: pd.DataFrame
+) -> dict[str, Any]:
+    """Retry Gemini rate limits with backoff inside the overall request timeout."""
+    deadline = time.monotonic() + GEMINI_REQUEST_TIMEOUT_MS / 1000
+    retry_delay_ms = 1_000
+
+    while True:
+        remaining_ms = int((deadline - time.monotonic()) * 1000)
+        if remaining_ms <= 0:
+            raise TimeoutException(
+                "Gemini remained rate-limited for 45 seconds"
+            )
+        try:
+            with genai.Client(
+                api_key=api_key,
+                http_options=genai.types.HttpOptions(timeout=remaining_ms),
+            ) as client:
+                return analyze_inquiry(client, model, message, faqs)
+        except APIError as error:
+            if error.code != 429:
+                raise
+            remaining_ms = int((deadline - time.monotonic()) * 1000)
+            if remaining_ms <= 0:
+                raise TimeoutException(
+                    "Gemini remained rate-limited for 45 seconds"
+                ) from error
+            delay_ms = min(retry_delay_ms, remaining_ms)
+            time.sleep(delay_ms / 1000)
+            if delay_ms >= remaining_ms:
+                raise TimeoutException(
+                    "Gemini remained rate-limited for 45 seconds"
+                ) from error
+            retry_delay_ms = min(retry_delay_ms * 2, 8_000)
+
+
 def show_analysis(analysis: dict[str, Any], ticket_id: str) -> None:
     """Display the ticket details below an assistant response."""
     response_source = analysis.get("response_source")
@@ -720,25 +757,24 @@ def render_chat(
             )
             st.rerun()
         try:
-            with st.spinner("Reviewing your question..."):
-                client = genai.Client(
-                    api_key=api_key,
-                    http_options=genai.types.HttpOptions(
-                        timeout=GEMINI_REQUEST_TIMEOUT_MS
-                    ),
+            with st.spinner("Waiting for Gemini..."):
+                analysis = analyze_inquiry_with_retry(
+                    api_key, model, pending_message, faqs
                 )
-                analysis = analyze_inquiry(client, model, pending_message, faqs)
                 create_ticket(
                     pending_message,
                     analysis,
                     conversation_id=conversation_id,
                 )
-        except TimeoutException:
+        except TimeoutException as error:
+            reason = str(error)
+            if "45 seconds" not in reason:
+                reason = "Gemini did not respond within 45 seconds"
             append_timeout_fallback(
                 pending_message,
                 faqs,
                 conversation_id,
-                "Gemini did not respond within 45 seconds",
+                reason,
             )
             st.rerun()
         except APIError as error:

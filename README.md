@@ -83,12 +83,12 @@ The FAQ CSV contains 30 entries. The historical ticket CSV contains 50 synthetic
 
 ## Using the app
 
-- **Chat:** Submit a customer question to get a response and ticket analysis. Inquiries marked for escalation are saved with `Escalated` status; other new inquiries start as `Open`. If Gemini is unavailable or no key is configured, matching FAQ answers are used; otherwise the request is saved as an Open ticket.
+- **Chat:** Submit a customer question to get a response and ticket analysis. Inquiries marked for escalation are saved with `Escalated` status; other new inquiries start as `Open`. Gemini is tried first; the FAQ is used only after a timeout.
 - **Chat history:** The conversation ID is stored in the URL so the same conversation can be restored after a page refresh. Treat conversation links as private; this local demo does not include user authentication.
 - **Ticket history:** Search tickets, filter by status, update status or assignee, and export the filtered results as CSV.
 - **Admin dashboard:** View ticket totals, status, reply, reopened, unresolved, and resolution-time metrics plus charts. The dashboard works without an API key.
 
-With a valid API key, Gemini is always tried first. If a request times out after 45 seconds or returns HTTP 504, the app uses a matching FAQ answer when available; if no FAQ matches, it saves an Open ticket. Missing or rejected keys, unavailable models, quota errors, and other non-timeout failures do not use FAQ content: the app shows the reason and saves an Open ticket instead. Fallback tickets are labeled, and their sentiment and priority are marked "Not analyzed."
+With a valid API key, Gemini is always tried first. Temporary HTTP 429 rate limits are retried with exponential backoff within the 45-second request budget. If Gemini still times out or returns HTTP 504, the app uses a matching FAQ answer when available; if no FAQ matches, it saves an Open ticket. Missing or rejected keys, unavailable models, and other non-timeout failures do not use FAQ content: the app shows the reason and saves an Open ticket instead. Fallback tickets are labeled, and their sentiment and priority are marked "Not analyzed."
 
 ## Demo walkthrough
 

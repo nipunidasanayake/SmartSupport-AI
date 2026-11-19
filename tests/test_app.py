@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from contextlib import closing
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 from google.genai.errors import APIError
@@ -139,7 +139,7 @@ class SmartSupportAppTests(unittest.TestCase):
     def test_504_faq_fallback_creates_open_ticket(self) -> None:
         message = "I cannot log into my account after resetting my password."
         with (
-            patch.object(app.genai, "Client", return_value=object()),
+            patch.object(app.genai, "Client", return_value=MagicMock()),
             patch.object(
                 app,
                 "analyze_inquiry",
@@ -170,7 +170,7 @@ class SmartSupportAppTests(unittest.TestCase):
     def test_gemini_timeout_uses_faq_and_creates_ticket(self) -> None:
         message = "I cannot log into my account after resetting my password."
         with (
-            patch.object(app.genai, "Client", return_value=object()),
+            patch.object(app.genai, "Client", return_value=MagicMock()),
             patch.object(
                 app,
                 "analyze_inquiry",
@@ -237,7 +237,7 @@ app.render_chat(
     def test_api_error_saves_ticket_and_releases_pending_message(self) -> None:
         message = "I cannot log into my account after resetting my password."
         with (
-            patch.object(app.genai, "Client", return_value=object()),
+            patch.object(app.genai, "Client", return_value=MagicMock()),
             patch.object(
                 app,
                 "analyze_inquiry",
@@ -256,10 +256,70 @@ app.render_chat(
         self.assertEqual(messages[1]["analysis"]["status"], "Open")
         self.assertNotIn("pending_message", test_app.session_state)
 
+    def test_429_retries_gemini_before_using_faq(self) -> None:
+        message = "I cannot log into my account after resetting my password."
+        analysis = {
+            "answer": "Gemini answered after a retry.",
+            "category": "Account",
+            "sentiment": "Neutral",
+            "priority": "Low",
+            "summary": "Account access question",
+            "escalate": False,
+        }
+        with (
+            patch.object(app.genai, "Client", return_value=MagicMock()),
+            patch.object(
+                app,
+                "analyze_inquiry",
+                side_effect=[
+                    APIError(429, {"error": {"message": "rate limited"}}),
+                    analysis,
+                ],
+            ) as analyze_mock,
+        ):
+            test_app = AppTest.from_string(CHAT_SCRIPT).run()
+            test_app.chat_input[0].set_value(message).run()
+
+        self.assertEqual(test_app.exception, [])
+        self.assertEqual(analyze_mock.call_count, 2)
+        messages = app.read_conversation_messages("test-conversation")
+        self.assertEqual(messages[1]["content"], analysis["answer"])
+        self.assertEqual(messages[1]["response_source"], "Gemini")
+
+    def test_persistent_429_retries_until_the_45_second_budget(self) -> None:
+        elapsed = [0.0]
+        rate_limit = APIError(
+            429, {"error": {"message": "rate limited"}}
+        )
+
+        def fake_monotonic() -> float:
+            return elapsed[0]
+
+        def fake_sleep(seconds: float) -> None:
+            elapsed[0] += seconds
+
+        with (
+            patch.object(app.genai, "Client", return_value=MagicMock()),
+            patch.object(app, "analyze_inquiry", side_effect=rate_limit),
+            patch.object(app.time, "monotonic", side_effect=fake_monotonic),
+            patch.object(app.time, "sleep", side_effect=fake_sleep),
+        ):
+            with self.assertRaises(TimeoutException):
+                app.analyze_inquiry_with_retry(
+                    "test-key",
+                    "gemini-4-hydrogen",
+                    "question",
+                    app.load_faqs(),
+                )
+
+        self.assertEqual(
+            elapsed[0], app.GEMINI_REQUEST_TIMEOUT_MS / 1000
+        )
+
     def test_network_error_saves_ticket(self) -> None:
         message = "I cannot log into my account after resetting my password."
         with (
-            patch.object(app.genai, "Client", return_value=object()),
+            patch.object(app.genai, "Client", return_value=MagicMock()),
             patch.object(
                 app,
                 "analyze_inquiry",
@@ -287,7 +347,7 @@ app.render_chat(
             "escalate": False,
         }
         with (
-            patch.object(app.genai, "Client", return_value=object()),
+            patch.object(app.genai, "Client", return_value=MagicMock()),
             patch.object(app, "analyze_inquiry", return_value=analysis),
         ):
             test_app = AppTest.from_string(CHAT_SCRIPT).run()
