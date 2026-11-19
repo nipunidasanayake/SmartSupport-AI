@@ -1198,12 +1198,16 @@ def main() -> None:
         secret_key = str(st.secrets["GEMINI_API_KEY"]).strip()
     except (KeyError, FileNotFoundError):
         pass
-    sidebar_key = st.sidebar.text_input(
-        "Gemini API key",
-        value=default_key,
-        type="password",
-        help="Used only for Gemini requests; it is not saved in the database.",
-    ).strip()
+    if secret_key:
+        st.sidebar.caption("Gemini API key configured securely.")
+        sidebar_key = ""
+    else:
+        sidebar_key = st.sidebar.text_input(
+            "Gemini API key",
+            value=default_key,
+            type="password",
+            help="Used only for Gemini requests; it is not saved in the database.",
+        ).strip()
     api_key = sidebar_key or secret_key
     model = st.sidebar.text_input("Gemini model", value=DEFAULT_MODEL).strip()
     if not model:
