@@ -15,6 +15,19 @@ A beginner-friendly customer support assistant for the fictional ShopEase store.
 
 This is a simple knowledge-grounded chatbot, not a vector-search or model-training project. Gemini output can be incorrect; review escalated or sensitive cases before acting on them.
 
+## Live app
+
+This app is not deployed yet. Use [Deploy SmartSupport AI to Streamlit Community Cloud](https://share.streamlit.io/deploy?repository=nipunidasanayake%2FSmartSupport-AI&branch=main&mainModule=app.py) to create a public deployment. After deployment, add the generated `https://<app-name>.streamlit.app` address here as the live app link.
+
+### Deploying
+
+1. Sign in to [Streamlit Community Cloud](https://share.streamlit.io/) with GitHub.
+2. Open the deploy link above and select `nipunidasanayake/SmartSupport-AI`, branch `main`, and `app.py` as the entry point.
+3. Select **Deploy**. When the deployment finishes, copy its `streamlit.app` URL to use as the live app link.
+4. No Gemini key is configured on the server. To use Chat, enter your own Gemini API key in the app sidebar; the app does not save it in the database.
+
+**Public demo warning:** The app has no login or access control. Tickets, messages, chat history, and dashboard data are shared with anyone who opens the deployment. Do not enter real customer or sensitive information. The SQLite database is local to the app instance and may be reset when the hosted app restarts or redeploys.
+
 ## Setup
 
 1. Use Python 3.10 or later and create and activate a virtual environment:
