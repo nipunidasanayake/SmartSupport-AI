@@ -8,7 +8,7 @@ from unittest.mock import patch
 
 import pandas as pd
 from google.genai.errors import APIError
-from httpx import HTTPError
+from httpx import HTTPError, TimeoutException
 from streamlit.testing.v1 import AppTest
 
 import app
@@ -166,6 +166,27 @@ class SmartSupportAppTests(unittest.TestCase):
         )
         self.assertEqual(messages[1]["feedback"], 1)
         self.assertEqual(messages[1]["feedback"], 1)
+
+    def test_gemini_timeout_uses_faq_and_creates_ticket(self) -> None:
+        message = "I cannot log into my account after resetting my password."
+        with (
+            patch.object(app.genai, "Client", return_value=object()),
+            patch.object(
+                app,
+                "analyze_inquiry",
+                side_effect=TimeoutException("request timed out"),
+            ),
+        ):
+            test_app = AppTest.from_string(CHAT_SCRIPT).run()
+            test_app.chat_input[0].set_value(message).run()
+
+        self.assertEqual(test_app.exception, [])
+        messages = app.read_conversation_messages("test-conversation")
+        self.assertEqual(len(messages), 2)
+        self.assertEqual(messages[1]["response_source"], "FAQ fallback")
+        self.assertEqual(messages[1]["analysis"]["category"], "Account")
+        self.assertIn("within 45 seconds", messages[1]["content"])
+        self.assertEqual(messages[1]["analysis"]["status"], "Open")
 
     def test_new_chat_clears_pending_message_and_starts_new_conversation(
         self,
