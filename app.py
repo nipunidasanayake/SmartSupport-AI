@@ -1189,6 +1189,10 @@ def main() -> None:
         "Navigate", ("Chat", "Ticket history", "Admin dashboard")
     )
     default_key = os.getenv("GEMINI_API_KEY", "")
+    try:
+        default_key = default_key or st.secrets["GEMINI_API_KEY"]
+    except (KeyError, FileNotFoundError):
+        pass
     api_key = st.sidebar.text_input(
         "Gemini API key",
         value=default_key,
