@@ -32,11 +32,17 @@ The demonstration starts in Chat with a ShopEase customer question, then shows t
 
 ## UI screenshots
 
-The screenshots below show the Chat, Ticket history, and Admin dashboard pages in the running app.
+The screenshots below show the Chat workflow, a Gemini response example, Ticket history, and the Admin dashboard.
 
 ### Chat
 
 ![SmartSupport AI Chat](screenshots/chat-start.png)
+
+### Gemini response example
+
+This conversation shows an FAQ timeout fallback followed by a Gemini-generated response. The fallback message reflects an earlier app version; the current version creates an Open ticket when the timeout fallback is used.
+
+![SmartSupport AI chat with FAQ fallback and Gemini response](screenshots/chat-gemini-response.png)
 
 ### Ticket history
 
