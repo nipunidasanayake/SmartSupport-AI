@@ -18,7 +18,7 @@ CHAT_SCRIPT = """
 import app
 app.render_chat(
     "test-key",
-    "gemini-4-hydrogen",
+    "gemini-3.6-flash",
     app.load_faqs(),
     "test-conversation",
 )
@@ -28,7 +28,7 @@ CHAT_WITHOUT_KEY_SCRIPT = """
 import app
 app.render_chat(
     "",
-    "gemini-4-hydrogen",
+    "gemini-3.6-flash",
     app.load_faqs(),
     "test-conversation",
 )
@@ -83,7 +83,7 @@ class SmartSupportAppTests(unittest.TestCase):
         )
 
     def test_default_model_is_the_verified_model(self) -> None:
-        self.assertEqual(app.DEFAULT_MODEL, "gemini-4-hydrogen")
+        self.assertEqual(app.DEFAULT_MODEL, "gemini-3.6-flash")
 
     def test_existing_database_migrates_and_keeps_old_tickets(self) -> None:
         with closing(sqlite3.connect(self.database_path)) as connection:
@@ -196,7 +196,7 @@ class SmartSupportAppTests(unittest.TestCase):
 import app
 app.render_chat(
     "test-key",
-    "gemini-4-hydrogen",
+    "gemini-3.6-flash",
     app.load_faqs(),
     app.get_conversation_id(),
 )
@@ -337,7 +337,7 @@ app.render_chat(
             with self.assertRaises(TimeoutException):
                 app.analyze_inquiry_with_retry(
                     "test-key",
-                    "gemini-4-hydrogen",
+                    "gemini-3.6-flash",
                     "question",
                     app.load_faqs(),
                 )

@@ -58,7 +58,7 @@ This is a simple knowledge-grounded chatbot, not a vector-search or model-traini
    streamlit run app.py
    ```
 
-The default model is `gemini-4-hydrogen`; change the model name in the sidebar if your API account uses a different available model. Customer messages are sent to Gemini when submitted.
+The default model is `gemini-3.6-flash`; change the model name in the sidebar if your API account uses a different available model. Customer messages are sent to Gemini when submitted.
 
 ## Project files
 
