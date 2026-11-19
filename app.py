@@ -1189,16 +1189,18 @@ def main() -> None:
         "Navigate", ("Chat", "Ticket history", "Admin dashboard")
     )
     default_key = os.getenv("GEMINI_API_KEY", "")
+    secret_key = ""
     try:
-        default_key = default_key or st.secrets["GEMINI_API_KEY"]
+        secret_key = str(st.secrets["GEMINI_API_KEY"]).strip()
     except (KeyError, FileNotFoundError):
         pass
-    api_key = st.sidebar.text_input(
+    sidebar_key = st.sidebar.text_input(
         "Gemini API key",
         value=default_key,
         type="password",
         help="Used only for Gemini requests; it is not saved in the database.",
     ).strip()
+    api_key = sidebar_key or secret_key
     model = st.sidebar.text_input("Gemini model", value=DEFAULT_MODEL).strip()
     if not model:
         st.sidebar.error("Enter a Gemini model name.")
