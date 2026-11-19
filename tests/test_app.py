@@ -219,23 +219,23 @@ app.render_chat(
     def test_missing_api_key_saves_ticket_instead_of_disabling_chat(self) -> None:
         test_app = AppTest.from_string(CHAT_WITHOUT_KEY_SCRIPT).run()
         self.assertFalse(test_app.chat_input[0].disabled)
+        message = "I cannot log into my account after resetting my password."
 
-        test_app.chat_input[0].set_value(
-            "qzxv blorptyz unknown problem"
-        ).run()
+        test_app.chat_input[0].set_value(message).run()
 
         self.assertEqual(test_app.exception, [])
         messages = app.read_conversation_messages("test-conversation")
         self.assertEqual(len(messages), 2)
         self.assertEqual(messages[1]["response_source"], "Service fallback")
-        self.assertIn("saved as an Open ticket", messages[1]["content"])
+        self.assertIn("API key is missing", messages[1]["content"])
+        self.assertNotIn("based only on the ShopEase FAQ", messages[1]["content"])
         self.assertEqual(messages[1]["analysis"]["status"], "Open")
         self.assertEqual(
             messages[1]["analysis"]["sentiment"], "Not analyzed"
         )
 
     def test_api_error_saves_ticket_and_releases_pending_message(self) -> None:
-        message = "qzxv blorptyz unknown problem"
+        message = "I cannot log into my account after resetting my password."
         with (
             patch.object(app.genai, "Client", return_value=object()),
             patch.object(
@@ -252,11 +252,12 @@ app.render_chat(
         self.assertEqual(len(messages), 2)
         self.assertEqual(messages[1]["response_source"], "Service fallback")
         self.assertIn("rejected the API key", messages[1]["content"])
+        self.assertNotIn("based only on the ShopEase FAQ", messages[1]["content"])
         self.assertEqual(messages[1]["analysis"]["status"], "Open")
         self.assertNotIn("pending_message", test_app.session_state)
 
     def test_network_error_saves_ticket(self) -> None:
-        message = "qzxv blorptyz unknown problem"
+        message = "I cannot log into my account after resetting my password."
         with (
             patch.object(app.genai, "Client", return_value=object()),
             patch.object(
@@ -273,6 +274,7 @@ app.render_chat(
         self.assertEqual(len(messages), 2)
         self.assertEqual(messages[1]["response_source"], "Service fallback")
         self.assertIn("Could not connect to Gemini", messages[1]["content"])
+        self.assertNotIn("based only on the ShopEase FAQ", messages[1]["content"])
 
     def test_successful_gemini_response_is_saved_and_displayed(self) -> None:
         message = "Where is my order?"

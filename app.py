@@ -486,44 +486,66 @@ def build_faq_fallback(
     )
 
 
-def append_unavailable_fallback(
-    message: str,
-    faqs: pd.DataFrame,
-    conversation_id: str,
-    reason: str,
+def clear_pending_message() -> None:
+    for key in (
+        "pending_message",
+        "pending_message_error",
+        "process_pending_message",
+    ):
+        st.session_state.pop(key, None)
+
+
+def append_service_fallback(
+    message: str, conversation_id: str, reason: str
 ) -> None:
-    """Save a FAQ response or an open ticket when Gemini is unavailable."""
-    relevant_faqs = find_relevant_faqs(message, faqs)
-    answer = build_faq_fallback(message, faqs, reason)
-    if answer is None:
-        category = "General"
-        response_source = "Service fallback"
-        summary = f"AI unavailable: {message[:120]}"
-        answer = (
-            f"{reason}. Your request has been saved as an Open ticket "
-            "for support follow-up."
-        )
-    else:
-        category = str(relevant_faqs.iloc[0]["category"])
-        response_source = "FAQ fallback"
-        summary = f"FAQ fallback: {message[:120]}"
+    """Save an Open ticket without using FAQ content when Gemini fails."""
     analysis = {
-        "answer": answer,
-        "category": category,
+        "answer": (
+            f"{reason}. I couldn't get a Gemini response, so your request "
+            "has been saved as an Open ticket for support follow-up."
+        ),
+        "category": "General",
         "sentiment": "Not analyzed",
         "priority": "Not analyzed",
-        "summary": summary,
+        "summary": f"Gemini unavailable: {message[:120]}",
         "escalate": False,
     }
     create_ticket(
         message,
         analysis,
-        response_source=response_source,
+        response_source="Service fallback",
         conversation_id=conversation_id,
     )
-    st.session_state.pop("pending_message", None)
-    st.session_state.pop("pending_message_error", None)
-    st.session_state.pop("process_pending_message", None)
+    clear_pending_message()
+
+
+def append_timeout_fallback(
+    message: str,
+    faqs: pd.DataFrame,
+    conversation_id: str,
+    reason: str,
+) -> None:
+    """Use FAQ only after a Gemini timeout, otherwise save an Open ticket."""
+    relevant_faqs = find_relevant_faqs(message, faqs)
+    answer = build_faq_fallback(message, faqs, reason)
+    if answer is None:
+        append_service_fallback(message, conversation_id, reason)
+        return
+    analysis = {
+        "answer": answer,
+        "category": str(relevant_faqs.iloc[0]["category"]),
+        "sentiment": "Not analyzed",
+        "priority": "Not analyzed",
+        "summary": f"FAQ fallback: {message[:120]}",
+        "escalate": False,
+    }
+    create_ticket(
+        message,
+        analysis,
+        response_source="FAQ fallback",
+        conversation_id=conversation_id,
+    )
+    clear_pending_message()
 
 
 def analyze_inquiry(
@@ -624,9 +646,7 @@ def schedule_pending_message_retry() -> None:
 
 def start_new_conversation() -> None:
     st.query_params["conversation_id"] = uuid.uuid4().hex
-    st.session_state.pop("pending_message", None)
-    st.session_state.pop("pending_message_error", None)
-    st.session_state.pop("process_pending_message", None)
+    clear_pending_message()
 
 
 def render_chat(
@@ -651,9 +671,9 @@ def render_chat(
 
     if not api_key:
         st.info(
-            "Gemini is not configured. Add an API key in the sidebar for "
-            "AI-generated replies; without one, matching FAQ answers are used "
-            "and other questions are saved as Open tickets."
+            "Add a Gemini API key in the sidebar to get Gemini answers. "
+            "Without one, questions are saved as Open tickets. FAQ answers "
+            "are used only if a Gemini request times out."
         )
 
     messages = read_conversation_messages(conversation_id)
@@ -693,9 +713,8 @@ def render_chat(
         st.session_state.process_pending_message = False
         pending_message = st.session_state.pending_message
         if not api_key:
-            append_unavailable_fallback(
+            append_service_fallback(
                 pending_message,
-                faqs,
                 conversation_id,
                 "Gemini API key is missing",
             )
@@ -715,7 +734,7 @@ def render_chat(
                     conversation_id=conversation_id,
                 )
         except TimeoutException:
-            append_unavailable_fallback(
+            append_timeout_fallback(
                 pending_message,
                 faqs,
                 conversation_id,
@@ -723,40 +742,45 @@ def render_chat(
             )
             st.rerun()
         except APIError as error:
-            if error.code == 404:
-                reason = "The selected Gemini model is unavailable (404)"
-            elif error.code == 504:
-                reason = "Gemini timed out (504)"
-            elif error.code == 503:
-                reason = "Gemini is temporarily unavailable (503)"
-            elif error.code == 429:
-                reason = "Gemini rate limit or quota was reached (429)"
-            elif error.code in (401, 403):
-                reason = f"Gemini rejected the API key (HTTP {error.code})"
-            else:
-                reason = (
-                    f"Gemini request failed (HTTP {error.code})"
-                    if error.code
-                    else "Gemini request failed"
+            if error.code == 504:
+                append_timeout_fallback(
+                    pending_message,
+                    faqs,
+                    conversation_id,
+                    "Gemini timed out (504)",
                 )
-            append_unavailable_fallback(
-                pending_message, faqs, conversation_id, reason
-            )
-            st.rerun()
+                st.rerun()
+            else:
+                if error.code == 404:
+                    reason = "The selected Gemini model is unavailable (404)"
+                elif error.code == 503:
+                    reason = "Gemini is temporarily unavailable (503)"
+                elif error.code == 429:
+                    reason = "Gemini rate limit or quota was reached (429)"
+                elif error.code in (401, 403):
+                    reason = f"Gemini rejected the API key (HTTP {error.code})"
+                else:
+                    reason = (
+                        f"Gemini request failed (HTTP {error.code})"
+                        if error.code
+                        else "Gemini request failed"
+                    )
+                append_service_fallback(
+                    pending_message, conversation_id, reason
+                )
+                st.rerun()
         except HTTPError:
-            append_unavailable_fallback(
+            append_service_fallback(
                 pending_message,
-                faqs,
                 conversation_id,
                 "Could not connect to Gemini",
             )
             st.rerun()
-        except (json.JSONDecodeError, ValueError) as error:
-            append_unavailable_fallback(
+        except (json.JSONDecodeError, ValueError):
+            append_service_fallback(
                 pending_message,
-                faqs,
                 conversation_id,
-                f"Gemini returned an unusable response ({error})",
+                "Gemini returned an unusable response",
             )
             st.rerun()
         else:

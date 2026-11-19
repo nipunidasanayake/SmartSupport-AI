@@ -88,11 +88,11 @@ The FAQ CSV contains 30 entries. The historical ticket CSV contains 50 synthetic
 - **Ticket history:** Search tickets, filter by status, update status or assignee, and export the filtered results as CSV.
 - **Admin dashboard:** View ticket totals, status, reply, reopened, unresolved, and resolution-time metrics plus charts. The dashboard works without an API key.
 
-Gemini requests are limited to 45 seconds. If the API key is missing or rejected, the model is unavailable, the quota is exceeded, or a request times out, the app uses a matching FAQ answer when possible. Otherwise, it replies that Gemini is unavailable and saves the request as an Open ticket. Fallback tickets are labeled and their sentiment and priority are marked "Not analyzed." Correct the key, model, or quota issue in the sidebar before asking a new Gemini-powered question.
+With a valid API key, Gemini is always tried first. If a request times out after 45 seconds or returns HTTP 504, the app uses a matching FAQ answer when available; if no FAQ matches, it saves an Open ticket. Missing or rejected keys, unavailable models, quota errors, and other non-timeout failures do not use FAQ content: the app shows the reason and saves an Open ticket instead. Fallback tickets are labeled, and their sentiment and priority are marked "Not analyzed."
 
 ## Demo walkthrough
 
-1. Start the app. Enter a Gemini API key in the sidebar for AI-generated replies; without one, FAQ answers and ticket fallback still work.
+1. Start the app and enter a valid Gemini API key in the sidebar. Without a key, Gemini cannot answer; the app explains the issue and saves questions as Open tickets. FAQ fallback is reserved for timeouts.
 2. In **Chat**, ask a ShopEase question such as "How can I return an item?" The app displays the reply and ticket analysis, including category, sentiment, priority, summary, and escalation status.
 3. Open **Ticket history** to find the newly created ticket, review its details, and change its status or assignee.
 4. Open **Admin dashboard** to show the ticket totals and charts. New chat inquiries are reflected in the dashboard.

@@ -7,8 +7,8 @@ SmartSupport AI is a local Streamlit customer-support demo for the fictional Sho
 ## Roadmap delivery
 
 - **Project setup and datasets:** Python environment, dependencies, FAQ dataset, historical ticket dataset, and API-key configuration are documented.
-- **Gemini integration:** The tested default model is `gemini-4-hydrogen`. Gemini-generated questions receive a response and ticket analysis. If the key is missing or Gemini is unavailable, the app uses a matching FAQ or saves an Open fallback ticket.
-- **Ticket analysis:** Gemini supplies category, sentiment, priority, summary, and escalation recommendation. When Gemini is unavailable or no API key is configured, the app answers from matching FAQs or saves an Open ticket with a clear fallback response. Fallback tickets are labeled, and their sentiment and priority are marked “Not analyzed.”
+- **Gemini integration:** The tested default model is `gemini-4-hydrogen`. With a valid key, Gemini is tried first for each question. Only timeout errors use a matching FAQ; other API failures or a missing key produce a clear service response and an Open ticket.
+- **Ticket analysis:** Gemini supplies category, sentiment, priority, summary, and escalation recommendation. Timeout FAQ responses and service-fallback tickets are labeled, with sentiment and priority marked “Not analyzed.”
 - **Database:** SQLite stores tickets, response source, feedback, assignee, channel, status, reopen count, resolution time, and conversation ID. Existing databases are migrated without deleting their tickets.
 - **Interface:** Chat, ticket history, and analytics share a polished color system, responsive spacing, card-based metrics, and clearer page hierarchy.
 - **Chat UI:** The app displays a greeting, supports new conversations, restores a conversation from its URL, and stores thumbs-up/down feedback.
@@ -28,7 +28,7 @@ The suite covers model default, legacy database migration, successful chat persi
 
 ## Demonstration
 
-The demonstration starts in Chat with a ShopEase customer question, then shows the generated reply and ticket analysis. The ticket appears in Ticket history, where its status and assignee can be managed. The Admin dashboard summarizes the same ticket data with status and category charts and other support metrics. If Gemini is unavailable, the app uses a matching FAQ or creates a clearly labeled Open ticket; sentiment and priority are marked "Not analyzed." New chat resets the conversation and any failed pending request.
+The demonstration starts in Chat with a ShopEase customer question, then shows the generated reply and ticket analysis. The ticket appears in Ticket history, where its status and assignee can be managed. The Admin dashboard summarizes the same ticket data with status and category charts and other support metrics. If Gemini times out, a matching FAQ is used when possible; missing keys and other errors do not trigger FAQ answers and instead create a clearly labeled Open ticket. New chat resets the conversation and any failed pending request.
 
 ## UI screenshots
 
