@@ -17,7 +17,7 @@ This is a simple knowledge-grounded chatbot, not a vector-search or model-traini
 
 ## Live app
 
-Use [Deploy SmartSupport AI to Streamlit Community Cloud](https://share.streamlit.io/deploy?repository=nipunidasanayake%2FSmartSupport-AI&branch=main&mainModule=app.py) to create a public deployment. After deployment, add the generated `https://<app-name>.streamlit.app` address here as the live app link.
+[Open SmartSupport AI](https://nipunidasanayake-smartsupport-ai-app-gvyi2q.streamlit.app/)
 
 ### Deploying
 
