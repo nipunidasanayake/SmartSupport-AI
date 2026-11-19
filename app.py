@@ -17,7 +17,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from google import genai
 from google.genai.errors import APIError
-from httpx import TimeoutException
+from httpx import HTTPError, TimeoutException
 
 
 ROOT_DIR = Path(__file__).resolve().parent
@@ -468,7 +468,9 @@ def find_relevant_faqs(
     ]
 
 
-def build_faq_fallback(message: str, faqs: pd.DataFrame) -> str | None:
+def build_faq_fallback(
+    message: str, faqs: pd.DataFrame, reason: str = "Gemini was unavailable"
+) -> str | None:
     """Build a clearly labeled FAQ-only reply when Gemini is unavailable."""
     relevant_faqs = find_relevant_faqs(message, faqs)
     if relevant_faqs.empty:
@@ -478,39 +480,50 @@ def build_faq_fallback(message: str, faqs: pd.DataFrame) -> str | None:
         for row in relevant_faqs.itertuples(index=False)
     )
     return (
-        "Gemini timed out, so this reply is based only on the ShopEase FAQ. "
+        f"{reason}. This reply is based only on the ShopEase FAQ. "
         "Sentiment and priority were not AI-analyzed:\n\n"
         f"{faq_answers}"
     )
 
 
-def append_faq_fallback(
-    message: str, faqs: pd.DataFrame, conversation_id: str
-) -> bool:
-    """Save and display a ticket for a relevant FAQ-only fallback response."""
+def append_unavailable_fallback(
+    message: str,
+    faqs: pd.DataFrame,
+    conversation_id: str,
+    reason: str,
+) -> None:
+    """Save a FAQ response or an open ticket when Gemini is unavailable."""
     relevant_faqs = find_relevant_faqs(message, faqs)
-    if relevant_faqs.empty:
-        return False
-    answer = build_faq_fallback(message, faqs)
+    answer = build_faq_fallback(message, faqs, reason)
     if answer is None:
-        return False
+        category = "General"
+        response_source = "Service fallback"
+        summary = f"AI unavailable: {message[:120]}"
+        answer = (
+            f"{reason}. Your request has been saved as an Open ticket "
+            "for support follow-up."
+        )
+    else:
+        category = str(relevant_faqs.iloc[0]["category"])
+        response_source = "FAQ fallback"
+        summary = f"FAQ fallback: {message[:120]}"
     analysis = {
         "answer": answer,
-        "category": str(relevant_faqs.iloc[0]["category"]),
+        "category": category,
         "sentiment": "Not analyzed",
         "priority": "Not analyzed",
-        "summary": f"FAQ fallback: {message[:120]}",
+        "summary": summary,
         "escalate": False,
     }
     create_ticket(
         message,
         analysis,
-        response_source="FAQ fallback",
+        response_source=response_source,
         conversation_id=conversation_id,
     )
-    del st.session_state.pending_message
-    st.session_state.pending_message_error = None
-    return True
+    st.session_state.pop("pending_message", None)
+    st.session_state.pop("pending_message_error", None)
+    st.session_state.pop("process_pending_message", None)
 
 
 def analyze_inquiry(
@@ -609,6 +622,13 @@ def schedule_pending_message_retry() -> None:
     st.session_state.process_pending_message = True
 
 
+def start_new_conversation() -> None:
+    st.query_params["conversation_id"] = uuid.uuid4().hex
+    st.session_state.pop("pending_message", None)
+    st.session_state.pop("pending_message_error", None)
+    st.session_state.pop("process_pending_message", None)
+
+
 def render_chat(
     api_key: str,
     model: str,
@@ -622,16 +642,18 @@ def render_chat(
             "Personalized help for orders, delivery, payments, accounts, and products."
         )
     with action_column:
-        if st.button(
-            "New chat", key="new_conversation", type="primary"
-        ):
-            st.query_params["conversation_id"] = uuid.uuid4().hex
-            st.rerun()
+        st.button(
+            "New chat",
+            key="new_conversation",
+            type="primary",
+            on_click=start_new_conversation,
+        )
 
     if not api_key:
         st.info(
-            "Add your Gemini API key in the sidebar or set `GEMINI_API_KEY` "
-            "in your `.env` file to start a conversation."
+            "Gemini is not configured. Add an API key in the sidebar for "
+            "AI-generated replies; without one, matching FAQ answers are used "
+            "and other questions are saved as Open tickets."
         )
 
     messages = read_conversation_messages(conversation_id)
@@ -659,7 +681,7 @@ def render_chat(
     pending_message = st.session_state.get("pending_message")
     message = st.chat_input(
         "How can we help?",
-        disabled=not api_key or pending_message is not None,
+        disabled=pending_message is not None,
         max_chars=2000,
     )
     if message:
@@ -670,6 +692,14 @@ def render_chat(
     if st.session_state.get("process_pending_message", False):
         st.session_state.process_pending_message = False
         pending_message = st.session_state.pending_message
+        if not api_key:
+            append_unavailable_fallback(
+                pending_message,
+                faqs,
+                conversation_id,
+                "Gemini API key is missing",
+            )
+            st.rerun()
         try:
             with st.spinner("Reviewing your question..."):
                 client = genai.Client(
@@ -685,50 +715,53 @@ def render_chat(
                     conversation_id=conversation_id,
                 )
         except TimeoutException:
-            if append_faq_fallback(pending_message, faqs, conversation_id):
-                st.rerun()
-            st.session_state.pending_message_error = (
-                "Gemini did not respond within 45 seconds and no matching FAQ "
-                "was found. Retry later or choose another available model."
+            append_unavailable_fallback(
+                pending_message,
+                faqs,
+                conversation_id,
+                "Gemini did not respond within 45 seconds",
             )
+            st.rerun()
         except APIError as error:
             if error.code == 404:
-                st.session_state.pending_message_error = (
-                    "The selected Gemini model is unavailable or retired (404). "
-                    "Choose a model available to your API key, such as "
-                    "gemini-4-hydrogen, or enter another "
-                    "model listed for your account."
-                )
+                reason = "The selected Gemini model is unavailable (404)"
             elif error.code == 504:
-                if append_faq_fallback(
-                    pending_message, faqs, conversation_id
-                ):
-                    st.rerun()
-                st.session_state.pending_message_error = (
-                    "Google Gemini timed out (504) and no matching FAQ was "
-                    "found. Retry later or choose another available model."
-                )
+                reason = "Gemini timed out (504)"
             elif error.code == 503:
-                st.session_state.pending_message_error = (
-                    "Gemini is temporarily overloaded (503). Wait briefly or "
-                    "choose another available model in the sidebar, then retry."
-                )
+                reason = "Gemini is temporarily unavailable (503)"
             elif error.code == 429:
-                st.session_state.pending_message_error = (
-                    "Gemini's rate limit or quota was reached (429). Check your "
-                    "Google AI Studio quota, then retry."
-                )
+                reason = "Gemini rate limit or quota was reached (429)"
+            elif error.code in (401, 403):
+                reason = f"Gemini rejected the API key (HTTP {error.code})"
             else:
-                st.session_state.pending_message_error = (
-                    f"Could not process your request: {error}"
+                reason = (
+                    f"Gemini request failed (HTTP {error.code})"
+                    if error.code
+                    else "Gemini request failed"
                 )
-        except (json.JSONDecodeError, ValueError) as error:
-            st.session_state.pending_message_error = (
-                f"Could not process your request: {error}"
+            append_unavailable_fallback(
+                pending_message, faqs, conversation_id, reason
             )
+            st.rerun()
+        except HTTPError:
+            append_unavailable_fallback(
+                pending_message,
+                faqs,
+                conversation_id,
+                "Could not connect to Gemini",
+            )
+            st.rerun()
+        except (json.JSONDecodeError, ValueError) as error:
+            append_unavailable_fallback(
+                pending_message,
+                faqs,
+                conversation_id,
+                f"Gemini returned an unusable response ({error})",
+            )
+            st.rerun()
         else:
-            del st.session_state.pending_message
-            st.session_state.pending_message_error = None
+            st.session_state.pop("pending_message", None)
+            st.session_state.pop("pending_message_error", None)
             st.rerun()
 
     if st.session_state.get("pending_message_error"):

@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 import pandas as pd
 from google.genai.errors import APIError
+from httpx import HTTPError
 from streamlit.testing.v1 import AppTest
 
 import app
@@ -17,6 +18,16 @@ CHAT_SCRIPT = """
 import app
 app.render_chat(
     "test-key",
+    "gemini-4-hydrogen",
+    app.load_faqs(),
+    "test-conversation",
+)
+"""
+
+CHAT_WITHOUT_KEY_SCRIPT = """
+import app
+app.render_chat(
+    "",
     "gemini-4-hydrogen",
     app.load_faqs(),
     "test-conversation",
@@ -155,6 +166,116 @@ class SmartSupportAppTests(unittest.TestCase):
         )
         self.assertEqual(messages[1]["feedback"], 1)
         self.assertEqual(messages[1]["feedback"], 1)
+
+    def test_new_chat_clears_pending_message_and_starts_new_conversation(
+        self,
+    ) -> None:
+        test_app = AppTest.from_string(
+            """
+import app
+app.render_chat(
+    "test-key",
+    "gemini-4-hydrogen",
+    app.load_faqs(),
+    app.get_conversation_id(),
+)
+"""
+        ).run()
+        previous_id = test_app.query_params.get("conversation_id")
+        test_app.session_state["pending_message"] = "stuck request"
+        test_app.session_state["pending_message_error"] = "request failed"
+        test_app.session_state["process_pending_message"] = False
+
+        test_app.button[0].click().run()
+
+        self.assertNotEqual(
+            test_app.query_params.get("conversation_id"), previous_id
+        )
+        self.assertNotIn("pending_message", test_app.session_state)
+        self.assertNotIn("pending_message_error", test_app.session_state)
+        self.assertNotIn("process_pending_message", test_app.session_state)
+
+    def test_missing_api_key_saves_ticket_instead_of_disabling_chat(self) -> None:
+        test_app = AppTest.from_string(CHAT_WITHOUT_KEY_SCRIPT).run()
+        self.assertFalse(test_app.chat_input[0].disabled)
+
+        test_app.chat_input[0].set_value(
+            "qzxv blorptyz unknown problem"
+        ).run()
+
+        self.assertEqual(test_app.exception, [])
+        messages = app.read_conversation_messages("test-conversation")
+        self.assertEqual(len(messages), 2)
+        self.assertEqual(messages[1]["response_source"], "Service fallback")
+        self.assertIn("saved as an Open ticket", messages[1]["content"])
+        self.assertEqual(messages[1]["analysis"]["status"], "Open")
+        self.assertEqual(
+            messages[1]["analysis"]["sentiment"], "Not analyzed"
+        )
+
+    def test_api_error_saves_ticket_and_releases_pending_message(self) -> None:
+        message = "qzxv blorptyz unknown problem"
+        with (
+            patch.object(app.genai, "Client", return_value=object()),
+            patch.object(
+                app,
+                "analyze_inquiry",
+                side_effect=APIError(401, {"message": "unauthorized"}),
+            ),
+        ):
+            test_app = AppTest.from_string(CHAT_SCRIPT).run()
+            test_app.chat_input[0].set_value(message).run()
+
+        self.assertEqual(test_app.exception, [])
+        messages = app.read_conversation_messages("test-conversation")
+        self.assertEqual(len(messages), 2)
+        self.assertEqual(messages[1]["response_source"], "Service fallback")
+        self.assertIn("rejected the API key", messages[1]["content"])
+        self.assertEqual(messages[1]["analysis"]["status"], "Open")
+        self.assertNotIn("pending_message", test_app.session_state)
+
+    def test_network_error_saves_ticket(self) -> None:
+        message = "qzxv blorptyz unknown problem"
+        with (
+            patch.object(app.genai, "Client", return_value=object()),
+            patch.object(
+                app,
+                "analyze_inquiry",
+                side_effect=HTTPError("connection failed"),
+            ),
+        ):
+            test_app = AppTest.from_string(CHAT_SCRIPT).run()
+            test_app.chat_input[0].set_value(message).run()
+
+        self.assertEqual(test_app.exception, [])
+        messages = app.read_conversation_messages("test-conversation")
+        self.assertEqual(len(messages), 2)
+        self.assertEqual(messages[1]["response_source"], "Service fallback")
+        self.assertIn("Could not connect to Gemini", messages[1]["content"])
+
+    def test_successful_gemini_response_is_saved_and_displayed(self) -> None:
+        message = "Where is my order?"
+        analysis = {
+            "answer": "Use your tracking link to check its status.",
+            "category": "Shipping",
+            "sentiment": "Neutral",
+            "priority": "Low",
+            "summary": "Customer asks for an order update",
+            "escalate": False,
+        }
+        with (
+            patch.object(app.genai, "Client", return_value=object()),
+            patch.object(app, "analyze_inquiry", return_value=analysis),
+        ):
+            test_app = AppTest.from_string(CHAT_SCRIPT).run()
+            test_app.chat_input[0].set_value(message).run()
+
+        self.assertEqual(test_app.exception, [])
+        messages = app.read_conversation_messages("test-conversation")
+        self.assertEqual(len(messages), 2)
+        self.assertEqual(messages[0]["content"], message)
+        self.assertEqual(messages[1]["content"], analysis["answer"])
+        self.assertEqual(messages[1]["analysis"]["status"], "Open")
 
     def test_ticket_history_and_dashboard_render(self) -> None:
         history_script = """
