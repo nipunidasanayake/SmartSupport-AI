@@ -286,6 +286,36 @@ app.render_chat(
         self.assertEqual(messages[1]["content"], analysis["answer"])
         self.assertEqual(messages[1]["response_source"], "Gemini")
 
+    def test_503_retries_gemini_before_returning_an_error(self) -> None:
+        message = "I cannot log into my account after resetting my password."
+        analysis = {
+            "answer": "Gemini recovered from a temporary outage.",
+            "category": "Account",
+            "sentiment": "Neutral",
+            "priority": "Low",
+            "summary": "Account access question",
+            "escalate": False,
+        }
+        with (
+            patch.object(app.genai, "Client", return_value=MagicMock()),
+            patch.object(
+                app,
+                "analyze_inquiry",
+                side_effect=[
+                    APIError(503, {"error": {"message": "unavailable"}}),
+                    analysis,
+                ],
+            ) as analyze_mock,
+        ):
+            test_app = AppTest.from_string(CHAT_SCRIPT).run()
+            test_app.chat_input[0].set_value(message).run()
+
+        self.assertEqual(test_app.exception, [])
+        self.assertEqual(analyze_mock.call_count, 2)
+        messages = app.read_conversation_messages("test-conversation")
+        self.assertEqual(messages[1]["content"], analysis["answer"])
+        self.assertEqual(messages[1]["response_source"], "Gemini")
+
     def test_persistent_429_retries_until_the_60_second_budget(self) -> None:
         elapsed = [0.0]
         rate_limit = APIError(

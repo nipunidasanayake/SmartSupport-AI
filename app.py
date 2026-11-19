@@ -624,7 +624,7 @@ possibly duplicated charge, a security concern, or an unresolved urgent issue.
 def analyze_inquiry_with_retry(
     api_key: str, model: str, message: str, faqs: pd.DataFrame
 ) -> dict[str, Any]:
-    """Retry Gemini rate limits with backoff inside the overall request timeout."""
+    """Retry Gemini rate limits and temporary outages within the request timeout."""
     deadline = time.monotonic() + GEMINI_REQUEST_TIMEOUT_MS / 1000
     retry_delay_ms = 1_000
 
@@ -632,7 +632,7 @@ def analyze_inquiry_with_retry(
         remaining_ms = int((deadline - time.monotonic()) * 1000)
         if remaining_ms <= 0:
             raise TimeoutException(
-                "Gemini remained rate-limited for "
+                "Gemini remained unavailable for "
                 f"{GEMINI_REQUEST_TIMEOUT_SECONDS} seconds"
             )
         try:
@@ -642,10 +642,12 @@ def analyze_inquiry_with_retry(
             ) as client:
                 return analyze_inquiry(client, model, message, faqs)
         except APIError as error:
-            if error.code != 429:
+            if error.code not in (429, 503):
                 raise
             remaining_ms = int((deadline - time.monotonic()) * 1000)
             if remaining_ms <= 0:
+                if error.code == 503:
+                    raise
                 raise TimeoutException(
                     "Gemini remained rate-limited for "
                     f"{GEMINI_REQUEST_TIMEOUT_SECONDS} seconds"
@@ -653,6 +655,8 @@ def analyze_inquiry_with_retry(
             delay_ms = min(retry_delay_ms, remaining_ms)
             time.sleep(delay_ms / 1000)
             if delay_ms >= remaining_ms:
+                if error.code == 503:
+                    raise
                 raise TimeoutException(
                     "Gemini remained rate-limited for "
                     f"{GEMINI_REQUEST_TIMEOUT_SECONDS} seconds"
