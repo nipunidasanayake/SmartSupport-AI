@@ -22,9 +22,9 @@ This is a simple knowledge-grounded chatbot, not a vector-search or model-traini
 ### Deploying
 
 1. Sign in to [Streamlit Community Cloud](https://share.streamlit.io/) with GitHub.
-2. Open the deploy link above and select `nipunidasanayake/SmartSupport-AI`, branch `main`, and `app.py` as the entry point.
+2. [Deploy this repository](https://share.streamlit.io/deploy?repository=nipunidasanayake%2FSmartSupport-AI&branch=main&mainModule=app.py), selecting `nipunidasanayake/SmartSupport-AI`, branch `main`, and `app.py` as the entry point.
 3. Select **Deploy**. When the deployment finishes, copy its `streamlit.app` URL to use as the live app link.
-4. Add `GEMINI_API_KEY` to **Advanced settings > Secrets**, or enter your own Gemini API key in the app sidebar. The app does not save the sidebar value in the database.
+4. Add `GEMINI_API_KEY` to **Advanced settings > Secrets**. If no server secret is set, you can enter a key in the app sidebar instead. Do not share or commit API keys.
 
 **Public demo warning:** The app has no login or access control. Tickets, messages, chat history, and dashboard data are shared with anyone who opens the deployment. Do not enter real customer or sensitive information. The SQLite database is local to the app instance and may be reset when the hosted app restarts or redeploys.
 
@@ -88,16 +88,18 @@ The FAQ CSV contains 30 entries. The historical ticket CSV contains 50 synthetic
 - **Ticket history:** Search tickets, filter by status, update status or assignee, and export the filtered results as CSV.
 - **Admin dashboard:** View ticket totals, status, reply, reopened, unresolved, and resolution-time metrics plus charts. The dashboard works without an API key.
 
-With a valid API key, Gemini is always tried first. Temporary HTTP 429 rate limits are retried with exponential backoff within the 60-second request budget. If Gemini still times out or returns HTTP 504, the app uses a matching FAQ answer when available; if no FAQ matches, it saves an Open ticket. Missing or rejected keys, unavailable models, and other non-timeout failures do not use FAQ content: the app shows the reason and saves an Open ticket instead. Fallback tickets are labeled, and their sentiment and priority are marked "Not analyzed."
+With a valid API key, Gemini is always tried first. Temporary HTTP 429 and 503 responses are retried with exponential backoff within the 60-second request budget. If Gemini times out or returns HTTP 504, the app uses a matching FAQ answer when available; if no FAQ matches, it saves an Open ticket. Other failures show the reason and save an Open ticket instead. Fallback tickets are labeled, and their sentiment and priority are marked "Not analyzed."
+
+There is no in-chat **Retry** button. After a failed response, submit the question again to make another Gemini request. **New chat** starts a separate conversation; rebooting the hosted app is not a Gemini request retry. The deployed app was checked on 2026-11-19 and returned Gemini HTTP 503 and 504 errors, so live Gemini answering is not currently confirmed to work. A valid API key, model availability, quota, and Google's service status should be checked if these errors continue.
 
 ## Demo walkthrough
 
-1. Start the app and enter a valid Gemini API key in the sidebar. Without a key, Gemini cannot answer; the app explains the issue and saves questions as Open tickets. FAQ fallback is reserved for timeouts.
+1. Configure a valid Gemini API key using the sidebar locally or Streamlit Community Cloud Secrets for a hosted deployment. Without a key, Gemini cannot answer; the app explains the issue and saves questions as Open tickets. FAQ fallback is reserved for timeouts.
 2. In **Chat**, ask a ShopEase question such as "How can I return an item?" The app displays the reply and ticket analysis, including category, sentiment, priority, summary, and escalation status.
 3. Open **Ticket history** to find the newly created ticket, review its details, and change its status or assignee.
 4. Open **Admin dashboard** to show the ticket totals and charts. New chat inquiries are reflected in the dashboard.
 
-Use **New chat** to start a fresh conversation. It also clears a failed pending request so it cannot block the next question.
+Use **New chat** to start a fresh conversation. To retry a failed question, submit it again.
 
 ## Screenshots
 
